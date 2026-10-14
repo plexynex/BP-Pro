@@ -1,7 +1,7 @@
 // ============================================
 // ✅ 1. KONFIGURASI CACHE
 // ============================================
-const CACHE_NAME = 'pwa-cache-v2'; // 🔧 Ganti versi jika update // Nama cache (versi bisa diubah saat update)
+const CACHE_NAME = 'pwa-cache-v1'; // 🔧 Ganti versi jika update // Nama cache (versi bisa diubah saat update)
 const OFFLINE_PAGE = '/offline.html'; // Halaman fallback offline
 const ASSETS = [
 const ASSETS = [
