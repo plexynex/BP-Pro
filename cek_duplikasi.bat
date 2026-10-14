@@ -1,37 +1,44 @@
 @echo off
 setlocal enabledelayedexpansion
-title Cek File EDIT vs 4R (4 angka)
+title Cek File EDIT vs 4R
 
 :: ===== KONFIGURASI =====
-set "EDIT_DIR=%~dp0EDIT"
-set "R4_DIR=%~dp04R"
+:: Pakai variabel terpisah supaya tidak ada masalah parsing
+set "ROOT=%~dp0"
+if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 
-:: ===== VALIDASI =====
+set "EDIT_DIR=%ROOT%\EDIT"
+set "R4_DIR=%ROOT%\4R"
+
+:: ===== DEBUG: tampilkan path yang dipakai =====
 cls
 echo.
 echo   ==================================================
 echo     CEK FILE EDIT  vs  4R  (deteksi 4 angka)
 echo   ==================================================
 echo.
+echo   Path yang dipakai:
+echo     EDIT : %EDIT_DIR%
+echo     4R   : %R4_DIR%
+echo.
 
 if not exist "%EDIT_DIR%" (
-    echo   [!] Folder EDIT tidak ditemukan:
-    echo       %EDIT_DIR%
+    echo   [!] Folder EDIT tidak ditemukan.
+    echo       Cek: %EDIT_DIR%
     echo.
     pause
     exit /b
 )
 
 if not exist "%R4_DIR%" (
-    echo   [!] Folder 4R tidak ditemukan:
-    echo       %R4_DIR%
+    echo   [!] Folder 4R tidak ditemukan.
+    echo       Cek: %R4_DIR%
     echo.
     pause
     exit /b
 )
 
-echo   Sumber : %EDIT_DIR%
-echo   Target : %R4_DIR%
+echo   Kedua folder OK.
 echo.
 echo   --------------------------------------------------
 echo.
@@ -48,7 +55,6 @@ for %%F in ("%EDIT_DIR%\*.*") do (
     set "BASENAME=%%~nF"
     set /a TOTAL+=1
     
-    :: Ambil 4 angka terakhir dari nama file (sebelum ekstensi)
     call :AMBIL_4ANGKA "!BASENAME!"
     set "KODE=!KODE4!"
     
@@ -59,7 +65,6 @@ for %%F in ("%EDIT_DIR%\*.*") do (
     ) else (
         set "FOUND="
         
-        :: Cari file di 4R yang punya 4 angka sama
         for %%G in ("%R4_DIR%\*.*") do (
             set "GBASE=%%~nG"
             call :AMBIL_4ANGKA "!GBASE!"
@@ -107,7 +112,6 @@ goto :EOF
 
 :: ==================================================
 :: FUNGSI: Ambil 4 angka terakhir dari sebuah string
-:: Hasil disimpan di variabel KODE4
 :: ==================================================
 :AMBIL_4ANGKA
 set "STR=%~1"
@@ -115,7 +119,7 @@ set "KODE4="
 set "TMP="
 set "COUNT=0"
 
-:: Loop setiap karakter dari belakang
+:: Hitung panjang string
 set "LEN=0"
 set "S=!STR!"
 :COUNT_LEN
@@ -125,19 +129,19 @@ if defined S (
     goto :COUNT_LEN
 )
 
-:: Baca dari karakter terakhir ke belakang
+if %LEN% lss 1 goto :EOF
+
+:: Baca dari belakang
 for /l %%I in (%LEN%,-1,1) do (
     set /a IDX=%%I-1
-    for /f "delims=" %%C in ("!STR:~%%IDX,1!") do (
-        set "CH=%%C"
-        echo !CH! | findstr /r "^[0-9]$" >nul
-        if !errorlevel! equ 0 (
-            set "TMP=!CH!!TMP!"
-            set /a COUNT+=1
-            if !COUNT! geq 4 goto :GOT_4
-        ) else (
-            if !COUNT! gtr 0 goto :GOT_4
-        )
+    set "CH=!STR:~%%IDX,1!"
+    echo !CH! | findstr /r "^[0-9]$" >nul
+    if !errorlevel! equ 0 (
+        set "TMP=!CH!!TMP!"
+        set /a COUNT+=1
+        if !COUNT! geq 4 goto :GOT_4
+    ) else (
+        if !COUNT! gtr 0 goto :GOT_4
     )
 )
 
