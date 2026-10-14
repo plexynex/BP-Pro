@@ -4,10 +4,12 @@
 const CACHE_NAME = 'pwa-cache-v2'; // 🔧 Ganti versi jika update // Nama cache (versi bisa diubah saat update)
 const OFFLINE_PAGE = '/offline.html'; // Halaman fallback offline
 const ASSETS = [
-    '/',                           // Halaman utama
-    '/index.html',                 // File HTML
-    '/icon.png',  // Gambar penting
-    '/icon.png'
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.png'
+];
     // 🔧 Tambahkan file lain yang perlu di-cache
 ];
 
