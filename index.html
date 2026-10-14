@@ -7,14 +7,11 @@
     <meta name="theme-color" content="#eaeaea">
     <meta name="description" content="Untuk mencatat nama file hasil sesi foto pilihan kamu">
     <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href=icon.png">
+    <link rel="icon" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <!-- Tambahkan juga ini untuk menghilangkan warning deprecated -->
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * {
             box-sizing: border-box;
@@ -526,7 +523,6 @@
         <div class="header">
             <label class="logo-wrap" id="logoWrap" title="Klik untuk pilih logo (1:1)">
                 <input type="file" id="logoInput" accept="image/*" />
-                <!-- Ikon otomatis dari /icon.png -->
                 <img id="logoPreview" src="icon.png" alt="Logo" />
                 <span class="logo-placeholder" id="logoPlaceholder">LOGO<br>1:1</span>
             </label>
@@ -615,12 +611,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('✅ Service Worker terdaftar! Scope:', reg.scope);
-                    })
-                    .catch(err => {
-                        console.error('❌ Gagal mendaftar Service Worker:', err);
-                    });
+                    .then(reg => console.log('✅ Service Worker terdaftar! Scope:', reg.scope))
+                    .catch(err => console.error('❌ Gagal mendaftar Service Worker:', err));
             });
         }
         
@@ -632,27 +624,19 @@
             e.preventDefault();
             deferredPrompt = e;
             installBtn.style.display = 'block';
-            console.log('⚠️ Event beforeinstallprompt triggered');
         });
         
         installBtn.addEventListener('click', () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('🎉 Pengguna menerima install prompt');
-                    } else {
-                        console.log('😞 Pengguna menolak install prompt');
-                    }
                     deferredPrompt = null;
                     installBtn.style.display = 'none';
                 });
             }
         });
         
-        // ✅ 3. CEK JIKA APLIKASI SUDAH DIINSTALL
         window.addEventListener('appinstalled', () => {
-            console.log('🔥 Aplikasi berhasil diinstall!');
             installBtn.style.display = 'none';
         });
     </script>
@@ -661,10 +645,12 @@
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1559973933770346566/BJKq-FfsVpeRd99zXotJurkvwacSPFIjxyFuEBnG1aoRNooKL_A0LZMxPzW0xB2UXNOE";
 
         // ==== LINK INSTALASI APLIKASI ====
-        const INSTALL_LINK = "https://plexynex.github.io/BP-Pro/";
+        // Tidak ditampilkan di UI. Hanya dipakai saat ikon copy diklik.
+        const INSTALL_LINK = "https://example.com/download/batang-padi-project.apk";
 
         // ==== URL IKON DEFAULT ====
-        // Ikon diambil otomatis dari /icon.png saat halaman dimuat.
+        // Ikon diambil otomatis dari icon.png saat halaman dimuat.
+        // HANYA ditampilkan di UI — TIDAK dikirim ke Discord.
         const DEFAULT_ICON_URL = "icon.png";
 
         // ==== PALET WARNA BADGE ====
@@ -714,7 +700,6 @@
 
         // ==== STATE ====
         let files = [];
-        let logoDataUrl = null;
 
         const logoWrap        = document.getElementById('logoWrap');
         const logoInput       = document.getElementById('logoInput');
@@ -740,9 +725,7 @@
 
             if (statusTimer) clearTimeout(statusTimer);
             if (duration > 0) {
-                statusTimer = setTimeout(() => {
-                    clearStatus();
-                }, duration);
+                statusTimer = setTimeout(() => clearStatus(), duration);
             }
         }
 
@@ -788,35 +771,16 @@
             sendBtn.disabled = files.length === 0 || !hasUser;
         }
 
-        // ==== LOGO OTOMATIS DARI /icon.png ====
-        // Saat halaman dimuat, ikon diambil dari /icon.png.
-        // Jika gagal dimuat, placeholder "LOGO 1:1" akan tampil.
+        // ==== LOGO OTOMATIS DARI icon.png ====
+        // Hanya ditampilkan di UI, tidak ada kode untuk mengirim ke Discord.
         (function loadDefaultIcon() {
             const testImg = new Image();
             testImg.onload = () => {
-                // Berhasil memuat /icon.png
                 logoPreview.src = DEFAULT_ICON_URL;
                 logoWrap.classList.add('has-image');
-                // Simpan sebagai data URL agar bisa dipakai sebagai avatar webhook
-                // (avatar_url butuh data URL atau URL publik)
-                fetch(DEFAULT_ICON_URL)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            logoDataUrl = ev.target.result;
-                        };
-                        reader.readAsDataURL(blob);
-                    })
-                    .catch(() => {
-                        // Jika fetch gagal (misal CORS), fallback ke URL langsung
-                        logoDataUrl = DEFAULT_ICON_URL;
-                    });
             };
             testImg.onerror = () => {
-                // /icon.png tidak ditemukan — biarkan placeholder
                 logoWrap.classList.remove('has-image');
-                logoDataUrl = null;
             };
             testImg.src = DEFAULT_ICON_URL;
         })();
@@ -860,7 +824,7 @@
             }
         });
 
-        // ==== LOGO UPLOAD (opsional, untuk ganti ikon default) ====
+        // ==== LOGO UPLOAD (opsional, hanya untuk tampilan UI) ====
         logoWrap.addEventListener('click', (e) => {
             if (e.target.tagName !== 'INPUT') {
                 logoInput.click();
@@ -878,8 +842,7 @@
 
             const reader = new FileReader();
             reader.onload = (ev) => {
-                logoDataUrl = ev.target.result;
-                logoPreview.src = logoDataUrl;
+                logoPreview.src = ev.target.result;
                 logoWrap.classList.add('has-image');
                 clearStatus();
             };
@@ -964,7 +927,7 @@
             return lines.join('\n');
         }
 
-        // ==== KIRIM ====
+        // ==== KIRIM (TANPA AVATAR / ICON) ====
         async function sendToDiscord(userName, groupedText) {
             const content =
                 `📁 **Laporan File — Batang Padi Project**\n` +
@@ -972,14 +935,12 @@
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 groupedText;
 
+            // Payload hanya berisi username + content.
+            // Tidak ada avatar_url, tidak ada icon yang dikirim.
             const payload = {
                 username: "Batang Padi Project",
                 content: content
             };
-
-            if (logoDataUrl) {
-                payload.avatar_url = logoDataUrl;
-            }
 
             const response = await fetch(WEBHOOK_URL, {
                 method: "POST",
