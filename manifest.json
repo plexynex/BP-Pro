@@ -1,20 +1,25 @@
 {
-  "name": "Batang Padi Project",
+  "name": "Batang Padi Project — File Logger",
   "short_name": "BP-Pro",
+  "description": "Untuk mencatat nama file hasil sesi foto pilihan kamu",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#eaeaea",
   "icons": [
     {
       "src": "icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
