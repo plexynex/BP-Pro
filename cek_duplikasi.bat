@@ -1,17 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Cek File EDIT vs 4R
-
-:: ===== WARNA (opsional, aman) =====
-for /f %%A in ('echo prompt $E ^| cmd') do set "ESC=%%A"
-set "C_RESET=%ESC%[0m"
-set "C_BOLD=%ESC%[1m"
-set "C_CYAN=%ESC%[96m"
-set "C_GREEN=%ESC%[92m"
-set "C_RED=%ESC%[91m"
-set "C_YELLOW=%ESC%[93m"
-set "C_GRAY=%ESC%[90m"
-set "C_WHITE=%ESC%[97m"
+title Cek File EDIT vs 4R (tanpa ekstensi)
 
 :: ===== KONFIGURASI =====
 set "EDIT_DIR=%~dp0EDIT"
@@ -21,7 +10,7 @@ set "R4_DIR=%~dp04R"
 cls
 echo.
 echo   ==================================================
-echo     CEK FILE EDIT  vs  4R
+echo     CEK FILE EDIT  vs  4R  (abaikan ekstensi)
 echo   ==================================================
 echo.
 
@@ -52,15 +41,29 @@ set /a TOTAL=0
 set /a SUDAH_ADA=0
 set /a BELUM_ADA=0
 
-:: ===== PROSES =====
+:: ===== PROSES SETIAP FILE DI FOLDER EDIT =====
 for %%F in ("%EDIT_DIR%\*.*") do (
     set "FNAME=%%~nxF"
+    set "BASENAME=%%~nF"
+    set "FOUND="
     set /a TOTAL+=1
     
-    if exist "%R4_DIR%\!FNAME!" (
+    :: Cari file dengan nama dasar sama (ekstensi apapun) di folder 4R
+    for %%G in ("%R4_DIR%\!BASENAME!.*") do (
+        if exist "%%G" (
+            set "FOUND=%%~nxG"
+        )
+    )
+    
+    if defined FOUND (
         set /a SUDAH_ADA+=1
-        echo   [v] !FNAME!
-        echo       -- sudah ada di 4R
+        if /i "!FOUND!"=="!FNAME!" (
+            echo   [v] !FNAME!
+            echo       -- sudah ada di 4R ^(nama ^& ekstensi sama^)
+        ) else (
+            echo   [v] !FNAME!
+            echo       -- sudah ada di 4R sebagai: !FOUND!
+        )
     ) else (
         set /a BELUM_ADA+=1
         echo   [x] !FNAME!
