@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batang Padi Project — File Logger</title>
+    <meta name="theme-color" content="#eaeaea">
+    <meta name="description" content="Untuk mencatat nama file hasil sesi foto pilihan kamu">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 25% 10%, rgba(255, 255, 255, 0.05), transparent 45%),
+                radial-gradient(circle at 85% 90%, rgba(255, 255, 255, 0.03), transparent 55%),
+                linear-gradient(160deg, #050505 0%, #0b0b0b 50%, #000 100%);
+            color: #eaeaea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image:
+                repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 2px),
+                repeating-linear-gradient(90deg, #fff 0px, #fff 1px, transparent 1px, transparent 2px);
+            z-index: 0;
+        }
+
+        .panel {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 560px;
+
+            background: rgba(20, 20, 20, 0.55);
+            backdrop-filter: blur(18px) saturate(120%);
+            -webkit-backdrop-filter: blur(18px) saturate(120%);
+
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 18px;
+            padding: 1.75rem 1.75rem 1.5rem;
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 1.75rem;
+            right: 1.75rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            opacity: 0.7;
+        }
+
+        /* ==== ICON COPY DI KANAN ATAS PANEL ==== */
+        .btn-copy-top {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s, border-color 0.2s;
+            z-index: 2;
+        }
+
+        .btn-copy-top:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-copy-top:active {
+            transform: translateY(1px);
+        }
+
+        .btn-copy-top svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-copy-top.copied {
+            color: #22d67a;
+            border-color: rgba(34, 214, 122, 0.4);
+            background: rgba(34, 214, 122, 0.08);
+        }
+
+        /* ==== HEADER ==== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.4rem;
+            padding-right: 3rem;
+        }
+
+        .logo-wrap {
+            position: relative;
+            width: 62px;
+            height: 62px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .logo-wrap:hover {
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .logo-wrap.has-image img { display: block; }
+        .logo-wrap.has-image .logo-placeholder { display: none; }
+
+        .logo-placeholder {
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            line-height: 1.2;
+            padding: 0.2rem;
+        }
+
+        .logo-wrap input[type="file"] { display: none; }
+
+        .header-text { flex: 1; min-width: 0; }
+
+        #installBtn {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            display: none;
+            margin: 0 auto 1rem;
+            width: 100%;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        #installBtn:hover {
+            background-color: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 0.35rem;
+        }
+
+        .brand .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.35; }
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .sep {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 1.15rem 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 0.45rem;
+        }
+
+        .field { margin-bottom: 1rem; }
+
+        .input-row {
+            display: flex;
+            gap: 0.55rem;
+            align-items: stretch;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #ffffff;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.28);
+            font-weight: 400;
+        }
+
+        input[type="text"]:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+        }
+
+        .category-wrap {
+            position: relative;
+        }
+
+        .category-wrap input {
+            padding-right: 2.4rem;
+        }
+
+        .category-wrap::after {
+            content: "✎";
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 0.35rem;
+            letter-spacing: 0.01em;
+        }
+
+        button {
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.08s, opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .btn-add {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-add:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-send {
+            width: 100%;
+            margin-top: 0.5rem;
+            background: #ffffff;
+            color: #000000;
+            padding: 0.85rem;
+            font-size: 0.88rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .btn-send:hover:not(:disabled) { background: #e6e6e6; }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .list-header h2 {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0;
+        }
+
+        .count-badge {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            max-height: 170px;
+            overflow-y: auto;
+            padding: 0.6rem;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+        }
+
+        .chip-list:empty::after {
+            content: "Belum ada file dalam daftar.";
+            display: block;
+            width: 100%;
+            padding: 0.7rem 0;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.28);
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+
+        .chip-list::-webkit-scrollbar { width: 6px; }
+        .chip-list::-webkit-scrollbar-track { background: transparent; }
+        .chip-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+        .chip-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.45rem 0.3rem 0.55rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            font-size: 0.78rem;
+            max-width: 100%;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .chip:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chip .chip-name {
+            max-width: 190px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .chip .badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 0.12rem 0.42rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        .chip .btn-remove {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.82rem;
+            padding: 0 0.15rem;
+            line-height: 1;
+            border-radius: 50%;
+            font-weight: 400;
+            letter-spacing: 0;
+        }
+
+        .chip .btn-remove:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .status {
+            margin-top: 0.9rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            display: none;
+            border: 1px solid transparent;
+            letter-spacing: 0.01em;
+        }
+
+        .status.success {
+            display: block;
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .status.error {
+            display: block;
+            background: rgba(255, 255, 255, 0.03);
+            color: #ffb3b3;
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .status.loading {
+            display: block;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .footer {
+            margin-top: 1.1rem;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.22);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+
+        <!-- Icon copy di kanan atas panel -->
+        <button
+            id="copyBtn"
+            class="btn-copy-top"
+            type="button"
+            title="Copy link instalasi"
+            aria-label="Copy link instalasi"
+        >
+            <svg viewBox="0 0 24 24" id="copyIcon">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+        </button>
+
+        <div class="header">
+            <label class="logo-wrap" id="logoWrap" title="Klik untuk pilih logo (1:1)">
+                <input type="file" id="logoInput" accept="image/*" />
+                <!-- Ikon otomatis dari /icon.png -->
+                <img id="logoPreview" src="/icon.png" alt="Logo" />
+                <span class="logo-placeholder" id="logoPlaceholder">LOGO<br>1:1</span>
+            </label>
+
+            <div class="header-text">
+                <div class="brand">
+                    <span class="dot"></span>
+                    <span>Batang Padi Project</span>
+                </div>
+                <h1>File Logger</h1>
+            </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <button id="installBtn">Install App</button>
+
+        <!-- Nama pengguna -->
+        <div class="field">
+            <label for="username">Nama Pengguna</label>
+            <input
+                type="text"
+                id="username"
+                placeholder="Nama Pengguna"
+                autocomplete="off"
+            />
+        </div>
+
+        <!-- Kategori -->
+        <div class="field">
+            <label for="category">Kategori</label>
+            <div class="category-wrap">
+                <input
+                    type="text"
+                    id="category"
+                    list="categorySuggestions"
+                    placeholder="Tulis atau pilih kategori"
+                    autocomplete="off"
+                />
+            </div>
+            <datalist id="categorySuggestions">
+                <option value="Pose"></option>
+                <option value="Lamin"></option>
+                <option value="Dokumentasi"></option>
+                <option value="Edit"></option>
+                <option value="Cetak"></option>
+            </datalist>
+            <div class="hint">Bisa pilih dari daftar atau tulis kategori baru sendiri.</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Input + tombol tambah -->
+        <div class="field">
+            <label for="fileName">Nama File</label>
+            <div class="input-row">
+                <input
+                    type="text"
+                    id="fileName"
+                    placeholder="Contoh: 1234 / IMG_1234.jpg"
+                    autocomplete="off"
+                    title="Tulis 4 angka terakhir atau nama file"
+                />
+                <button id="addBtn" class="btn-add" type="button">Tambah</button>
+            </div>
+        </div>
+
+        <!-- Daftar file -->
+        <div class="list-header">
+            <h2>Daftar File</h2>
+            <span class="count-badge" id="countBadge">0</span>
+        </div>
+        <div class="chip-list" id="chipList"></div>
+
+        <div class="sep"></div>
+
+        <button id="sendBtn" class="btn-send" type="button" disabled>Kirim</button>
+
+        <div id="status" class="status"></div>
+
+        <div class="footer">Batang Padi Project</div>
+    </div>
+
+    <script>
+        // ✅ 1. REGISTER SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('✅ Service Worker terdaftar! Scope:', reg.scope);
+                    })
+                    .catch(err => {
+                        console.error('❌ Gagal mendaftar Service Worker:', err);
+                    });
+            });
+        }
+        
+        // ✅ 2. INSTALL PROMPT HANDLER
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+            console.log('⚠️ Event beforeinstallprompt triggered');
+        });
+        
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('🎉 Pengguna menerima install prompt');
+                    } else {
+                        console.log('😞 Pengguna menolak install prompt');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            }
+        });
+        
+        // ✅ 3. CEK JIKA APLIKASI SUDAH DIINSTALL
+        window.addEventListener('appinstalled', () => {
+            console.log('🔥 Aplikasi berhasil diinstall!');
+            installBtn.style.display = 'none';
+        });
+    </script>
+    <script>
+        // ==== KONFIGURASI WEBHOOK ====
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1559973933770346566/BJKq-FfsVpeRd99zXotJurkvwacSPFIjxyFuEBnG1aoRNooKL_A0LZMxPzW0xB2UXNOE";
+
+        // ==== LINK INSTALASI APLIKASI ====
+        const INSTALL_LINK = "https://example.com/download/batang-padi-project.apk";
+
+        // ==== URL IKON DEFAULT ====
+        // Ikon diambil otomatis dari /icon.png saat halaman dimuat.
+        const DEFAULT_ICON_URL = "/icon.png";
+
+        // ==== PALET WARNA BADGE ====
+        const BADGE_COLORS = [
+            { bg: "#ff2e88", fg: "#ffffff" },
+            { bg: "#00c4ff", fg: "#002233" },
+            { bg: "#22d67a", fg: "#002b16" },
+            { bg: "#ffab1a", fg: "#3a2400" },
+            { bg: "#b96bff", fg: "#22003a" },
+            { bg: "#ff5c5c", fg: "#2b0000" },
+            { bg: "#4d7cff", fg: "#ffffff" },
+            { bg: "#ffd93d", fg: "#3a3000" },
+            { bg: "#00e0b8", fg: "#003d30" },
+            { bg: "#ff8ac9", fg: "#3a0021" }
+        ];
+
+        const categoryColorMap = new Map();
+
+        function getCategoryColor(categoryName) {
+            const key = categoryName.toLowerCase().trim();
+            if (categoryColorMap.has(key)) {
+                return BADGE_COLORS[categoryColorMap.get(key)];
+            }
+            let hash = 0;
+            for (let i = 0; i < key.length; i++) {
+                hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+            }
+            const index = hash % BADGE_COLORS.length;
+            categoryColorMap.set(key, index);
+            return BADGE_COLORS[index];
+        }
+
+        // ==== EMOJI ====
+        const DEFAULT_EMOJI = "📎";
+        const KNOWN_EMOJI = {
+            pose: "🕺",
+            lamin: "🗂️",
+            dokumentasi: "📸",
+            edit: "🎨",
+            cetak: "🖨️"
+        };
+
+        function getCategoryEmoji(categoryName) {
+            const key = categoryName.toLowerCase().trim();
+            return KNOWN_EMOJI[key] || DEFAULT_EMOJI;
+        }
+
+        // ==== STATE ====
+        let files = [];
+        let logoDataUrl = null;
+
+        const logoWrap        = document.getElementById('logoWrap');
+        const logoInput       = document.getElementById('logoInput');
+        const logoPreview     = document.getElementById('logoPreview');
+
+        const usernameEl = document.getElementById('username');
+        const input      = document.getElementById('fileName');
+        const categoryEl = document.getElementById('category');
+        const addBtn     = document.getElementById('addBtn');
+        const sendBtn    = document.getElementById('sendBtn');
+        const chipList   = document.getElementById('chipList');
+        const countBadge = document.getElementById('countBadge');
+        const statusEl   = document.getElementById('status');
+
+        const copyBtn = document.getElementById('copyBtn');
+
+        // ==== UTIL ====
+        let statusTimer = null;
+
+        function showStatus(message, type, duration = 3000) {
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+
+            if (statusTimer) clearTimeout(statusTimer);
+            if (duration > 0) {
+                statusTimer = setTimeout(() => {
+                    clearStatus();
+                }, duration);
+            }
+        }
+
+        function clearStatus() {
+            statusEl.className = 'status';
+            statusEl.textContent = '';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function normalizeCategory(raw) {
+            return raw.trim().replace(/\s+/g, ' ');
+        }
+
+        function renderList() {
+            chipList.innerHTML = '';
+
+            files.forEach((file, index) => {
+                const color = getCategoryColor(file.category);
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.title = `${file.category} — ${file.name}`;
+
+                chip.innerHTML = `
+                    <span class="badge" style="background:${color.bg}; color:${color.fg};">${escapeHtml(file.category)}</span>
+                    <span class="chip-name">${escapeHtml(file.name)}</span>
+                    <button class="btn-remove" title="Hapus" data-index="${index}">✕</button>
+                `;
+                chipList.appendChild(chip);
+            });
+
+            countBadge.textContent = files.length;
+            updateSendButton();
+        }
+
+        function updateSendButton() {
+            const hasUser = usernameEl.value.trim().length > 0;
+            sendBtn.disabled = files.length === 0 || !hasUser;
+        }
+
+        // ==== LOGO OTOMATIS DARI /icon.png ====
+        // Saat halaman dimuat, ikon diambil dari /icon.png.
+        // Jika gagal dimuat, placeholder "LOGO 1:1" akan tampil.
+        (function loadDefaultIcon() {
+            const testImg = new Image();
+            testImg.onload = () => {
+                // Berhasil memuat /icon.png
+                logoPreview.src = DEFAULT_ICON_URL;
+                logoWrap.classList.add('has-image');
+                // Simpan sebagai data URL agar bisa dipakai sebagai avatar webhook
+                // (avatar_url butuh data URL atau URL publik)
+                fetch(DEFAULT_ICON_URL)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            logoDataUrl = ev.target.result;
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(() => {
+                        // Jika fetch gagal (misal CORS), fallback ke URL langsung
+                        logoDataUrl = DEFAULT_ICON_URL;
+                    });
+            };
+            testImg.onerror = () => {
+                // /icon.png tidak ditemukan — biarkan placeholder
+                logoWrap.classList.remove('has-image');
+                logoDataUrl = null;
+            };
+            testImg.src = DEFAULT_ICON_URL;
+        })();
+
+        // ==== COPY LINK INSTALASI ====
+        const COPY_ICON_SVG = `
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        `;
+        const CHECK_ICON_SVG = `
+            <polyline points="20 6 9 17 4 12"></polyline>
+        `;
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(INSTALL_LINK);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = INSTALL_LINK;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = `<svg viewBox="0 0 24 24">${CHECK_ICON_SVG}</svg>`;
+
+                showStatus('✅ Link instalasi berhasil dicopy.', 'success', 2500);
+
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = `<svg viewBox="0 0 24 24">${COPY_ICON_SVG}</svg>`;
+                }, 1500);
+            } catch (err) {
+                console.error(err);
+                showStatus('❌ Gagal menyalin link.', 'error', 3000);
+            }
+        });
+
+        // ==== LOGO UPLOAD (opsional, untuk ganti ikon default) ====
+        logoWrap.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                logoInput.click();
+            }
+        });
+
+        logoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showStatus('⚠️  File logo harus berupa gambar.', 'error', 3000);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                logoDataUrl = ev.target.result;
+                logoPreview.src = logoDataUrl;
+                logoWrap.classList.add('has-image');
+                clearStatus();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ==== TAMBAH FILE ====
+        function addFile() {
+            const name = input.value.trim();
+            const catRaw = categoryEl.value;
+
+            if (!name) {
+                showStatus('⚠️  Nama file tidak boleh kosong.', 'error', 3000);
+                input.focus();
+                return;
+            }
+
+            const cat = normalizeCategory(catRaw);
+            if (!cat) {
+                showStatus('⚠️  Kategori tidak boleh kosong.', 'error', 3000);
+                categoryEl.focus();
+                return;
+            }
+
+            if (files.some(f =>
+                f.name.toLowerCase() === name.toLowerCase() &&
+                f.category.toLowerCase() === cat.toLowerCase()
+            )) {
+                showStatus('⚠️  File dengan nama & kategori yang sama sudah ada.', 'error', 3000);
+                return;
+            }
+
+            files.push({ name, category: cat });
+            input.value = '';
+            input.focus();
+            clearStatus();
+            renderList();
+        }
+
+        addBtn.addEventListener('click', addFile);
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addFile();
+            }
+        });
+
+        usernameEl.addEventListener('input', updateSendButton);
+
+        chipList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-remove');
+            if (!btn) return;
+
+            const index = Number(btn.dataset.index);
+            files.splice(index, 1);
+            renderList();
+        });
+
+        // ==== BUILD OUTPUT ====
+        function buildGroupedText() {
+            const order = [];
+            const grouped = {};
+
+            files.forEach(f => {
+                const key = f.category.toLowerCase();
+                if (!grouped[key]) {
+                    grouped[key] = { label: f.category, items: [] };
+                    order.push(key);
+                }
+                grouped[key].items.push(f.name);
+            });
+
+            const lines = [];
+            order.forEach(key => {
+                const group = grouped[key];
+                const emoji = getCategoryEmoji(group.label);
+                const fileNames = group.items.join(', ');
+                lines.push(`${emoji} **${group.label}**: \`\`\`${fileNames}\`\`\``);
+            });
+
+            return lines.join('\n');
+        }
+
+        // ==== KIRIM ====
+        async function sendToDiscord(userName, groupedText) {
+            const content =
+                `📁 **Laporan File — Batang Padi Project**\n` +
+                `👤 **Pengirim:** ${userName}\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
+                groupedText;
+
+            const payload = {
+                username: "Batang Padi Project",
+                content: content
+            };
+
+            if (logoDataUrl) {
+                payload.avatar_url = logoDataUrl;
+            }
+
+            const response = await fetch(WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                let detail = '';
+                try {
+                    const errData = await response.json();
+                    detail = errData.message || JSON.stringify(errData);
+                } catch (e) {
+                    detail = response.statusText;
+                }
+                throw new Error(`HTTP ${response.status}: ${detail}`);
+            }
+
+            return true;
+        }
+
+        sendBtn.addEventListener('click', async () => {
+            const userName = usernameEl.value.trim();
+
+            if (!userName) {
+                showStatus('⚠️  Nama pengguna belum diisi.', 'error', 3000);
+                usernameEl.focus();
+                return;
+            }
+
+            if (files.length === 0) return;
+
+            sendBtn.disabled = true;
+            addBtn.disabled = true;
+            usernameEl.disabled = true;
+            sendBtn.textContent = 'Mengirim...';
+            showStatus('⏳ Mengirim daftar file...', 'loading', 0);
+
+            try {
+                const groupedText = buildGroupedText();
+                await sendToDiscord(userName, groupedText);
+                showStatus('✅ Berhasil dikirim.', 'success', 3000);
+
+                files = [];
+                renderList();
+            } catch (error) {
+                console.error(error);
+                showStatus('❌ Gagal mengirim: ' + error.message, 'error', 5000);
+            } finally {
+                addBtn.disabled = false;
+                usernameEl.disabled = false;
+                sendBtn.textContent = 'Kirim';
+                updateSendButton();
+            }
+        });
+
+        // ==== INIT ====
+        renderList();
+    </script>
+</body>
+</html>
