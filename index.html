@@ -6,11 +6,12 @@
     <title>Batang Padi Project — File Logger</title>
     <meta name="theme-color" content="#eaeaea">
     <meta name="description" content="Untuk mencatat nama file hasil sesi foto pilihan kamu">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="/icon.png">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" href=icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <style>
         * {
             box-sizing: border-box;
@@ -523,7 +524,7 @@
             <label class="logo-wrap" id="logoWrap" title="Klik untuk pilih logo (1:1)">
                 <input type="file" id="logoInput" accept="image/*" />
                 <!-- Ikon otomatis dari /icon.png -->
-                <img id="logoPreview" src="/icon.png" alt="Logo" />
+                <img id="logoPreview" src="icon.png" alt="Logo" />
                 <span class="logo-placeholder" id="logoPlaceholder">LOGO<br>1:1</span>
             </label>
 
@@ -661,7 +662,7 @@
 
         // ==== URL IKON DEFAULT ====
         // Ikon diambil otomatis dari /icon.png saat halaman dimuat.
-        const DEFAULT_ICON_URL = "/icon.png";
+        const DEFAULT_ICON_URL = "icon.png";
 
         // ==== PALET WARNA BADGE ====
         const BADGE_COLORS = [
