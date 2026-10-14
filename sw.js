@@ -17,17 +17,20 @@ const ASSETS = [
 // ✅ 2. INSTALL SERVICE WORKER
 // ============================================
 self.addEventListener('install', (event) => {
-    console.log('🛠 Service Worker: Proses instalasi...');
-    
-    // Pre-cache assets penting saat instalasi
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('📦 Menyimpan assets ke cache:', ASSETS);
-                return cache.addAll(ASSETS);
-            })
-            .then(() => self.skipWaiting()) // Aktifkan SW segera
-    );
+  console.log('🛠 Service Worker: Proses instalasi...');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      console.log('📦 Menyimpan assets ke cache:', ASSETS);
+      for (const asset of ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn('⚠️ Gagal cache:', asset, err);
+        }
+      }
+    })
+  );
+  self.skipWaiting();
 });
 
 // ============================================
