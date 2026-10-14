@@ -3,42 +3,40 @@ setlocal enabledelayedexpansion
 title Cek File EDIT vs 4R
 
 :: ===== KONFIGURASI =====
-:: Pakai variabel terpisah supaya tidak ada masalah parsing
 set "ROOT=%~dp0"
 if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 
 set "EDIT_DIR=%ROOT%\EDIT"
 set "R4_DIR=%ROOT%\4R"
 
-:: ===== DEBUG: tampilkan path yang dipakai =====
-cls
-echo.
-echo   ==================================================
-echo     CEK FILE EDIT  vs  4R  (deteksi 4 angka)
-echo   ==================================================
-echo.
-echo   Path yang dipakai:
-echo     EDIT : %EDIT_DIR%
-echo     4R   : %R4_DIR%
-echo.
-
+:: ===== VALIDASI DIAM-DIAM (tanpa output) =====
 if not exist "%EDIT_DIR%" (
+    echo.
     echo   [!] Folder EDIT tidak ditemukan.
-    echo       Cek: %EDIT_DIR%
+    echo       %EDIT_DIR%
     echo.
     pause
     exit /b
 )
 
 if not exist "%R4_DIR%" (
+    echo.
     echo   [!] Folder 4R tidak ditemukan.
-    echo       Cek: %R4_DIR%
+    echo       %R4_DIR%
     echo.
     pause
     exit /b
 )
 
-echo   Kedua folder OK.
+:: ===== MULAI TAMPILAN (hanya kalau kedua folder OK) =====
+cls
+echo.
+echo   ==================================================
+echo     CEK FILE EDIT  vs  4R  (deteksi 4 angka)
+echo   ==================================================
+echo.
+echo   Sumber : %EDIT_DIR%
+echo   Target : %R4_DIR%
 echo.
 echo   --------------------------------------------------
 echo.
@@ -119,7 +117,6 @@ set "KODE4="
 set "TMP="
 set "COUNT=0"
 
-:: Hitung panjang string
 set "LEN=0"
 set "S=!STR!"
 :COUNT_LEN
@@ -131,7 +128,6 @@ if defined S (
 
 if %LEN% lss 1 goto :EOF
 
-:: Baca dari belakang
 for /l %%I in (%LEN%,-1,1) do (
     set /a IDX=%%I-1
     set "CH=!STR:~%%IDX,1!"
